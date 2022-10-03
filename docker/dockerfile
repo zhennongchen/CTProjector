@@ -17,6 +17,9 @@ RUN python3 -m pip install --upgrade pip
 COPY requirements.txt /env/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /env/requirements.txt
 
+# GitHub installations:
+RUN python3 -m pip install git+https://github.com/zhennongchen/CTProjector.git
+
 COPY entrypoint.sh /env/entrypoint.sh
 RUN chmod +x /env/entrypoint.sh
 
