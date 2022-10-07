@@ -8,8 +8,8 @@ import SimpleITK as sitk
 import time
 import os
 import ct_basic as ct
-import functions_collection as ff
-import transformation as transform
+import CTProjector.functions_collection as ff
+import CTProjector.transformation as transform
 import glob as gb
 import nibabel as nb
 

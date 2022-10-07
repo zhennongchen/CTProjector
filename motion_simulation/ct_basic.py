@@ -9,8 +9,8 @@ import numpy as np
 import cupy as cp
 import SimpleITK as sitk
 import os
-import functions_collection as ff
-import transformation as transform
+import CTProjector.functions_collection as ff
+import CTProjector.transformation as transform
 import glob as gb
 import nibabel as nb
 from PIL import Image
