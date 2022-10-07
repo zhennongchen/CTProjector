@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import time
 import os
-import transformation as transform
-import functions_collection as ff
 import ct_basic as ct
+import functions_collection as ff
+import transformation as transform
 import glob as gb
 import nibabel as nb
 
@@ -59,7 +59,7 @@ for p in patient_list:
     angles = projector.get_angles()
     print(angles.shape)
 
-    for random_i in range(0,1):
+    for random_i in range(0,10):
         
         # create folder
         random_folder = os.path.join(save_folder,folder_name +str(random_i + 1))
