@@ -1,21 +1,23 @@
 #/bin/bash
-
+# 
 # change the following variables to set up code, input and output dirs
 #HOST_WORK_DIR="/home/local/PARTNERS/dw640/docker_example"  # change this to your code directory
 #HOST_DATA_DIR="/home/local/PARTNERS/dw640/mnt/women_health_internal/DBT"  # change this to your data directory
 HOST_WORK_DIR="/home/local/PARTNERS/zc13/CTProjector"
-HOST_DATA_DIR="/home/local/PARTNERS/dw640/mnt/women_health_internal/DBT"
+HOST_DATA_DIR="/home/local/PARTNERS/zc13/data"
+# HOST_DATA_DIR="/home/local/PARTNERS/dw640/mnt/women_health_internal/DBT"
 
 # get host user id to populate to the container
 HOST_USER_ID="$(id -u)"
 HOST_GROUP_ID="$(id -g)"
 HOST_USER_NAME=${USER}
 CONTAINER_WORKDIR="/workspace/CTProjector"  
+CONTAINER_DATADIR="/local/data" #should be /mnt/data when using NAS drive
 #CONTAINER_WORKDIR="/workspace/docker_example"   
 
 sudo docker run -it --runtime=nvidia --name=docker_ex --network="bridge" \
 -v ${HOST_WORK_DIR}:${CONTAINER_WORKDIR} \
--v ${HOST_DATA_DIR}:"/mnt/data" \
+-v ${HOST_DATA_DIR}:${CONTAINER_DATADIR} \
 -p 8100:8100 \
 -e CONTAINER_UID=${HOST_USER_ID} \
 -e CONTAINER_GID=${HOST_GROUP_ID} \

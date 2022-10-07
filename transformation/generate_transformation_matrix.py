@@ -44,7 +44,7 @@ def generate_transform_matrix(t,r,s,img_shape):
 
     return translation,rotation,scale,np.dot(scale, np.dot(rotation, translation))
 
-def generate_random_3D_motion(max_t,max_r,pixel_dim = [0.68,0.68,1], time_range = [250,400],total_view_num = 2400, gantry_rotation_time = 500):
+def generate_random_3D_motion(max_t,max_r,pixel_dim = [0.68,0.68,1], time_range = [250,400],total_view_num = 2400, gantry_rotation_time = 500, no_random = False):
     # default, max_t (maximum translation) no more than 5mm
     # default, max_r (maximum rotation) no more than 15 degree
     # time_interval is the range of possible lasting time, a list with [minimum_lasting_time, maximum_lasting_time], default [200,400]ms
@@ -54,22 +54,30 @@ def generate_random_3D_motion(max_t,max_r,pixel_dim = [0.68,0.68,1], time_range 
     per_view_time = gantry_rotation_time / total_view_num
 
     # get the randomized translation
-    while True:
-        [t_x,t_y,t_z] = [random.rand()*max_t ,random.rand()*max_t,random.rand()*max_t]
-        if math.sqrt((t_x**2 + t_y**2 + t_z**2)) <= max_t:
-            break
-    translation = [t_x/pixel_dim[0], t_y/pixel_dim[1], t_z/pixel_dim[-1]]
-    translation_mm = [t_x,t_y,t_z]
+    if no_random == False:
+        while True:
+            [t_x,t_y,t_z] = [random.rand()*max_t ,random.rand()*max_t,random.rand()*max_t]
+            if math.sqrt((t_x**2 + t_y**2 + t_z**2)) <= max_t:
+                break
+        translation = [t_x/pixel_dim[0], t_y/pixel_dim[1], t_z/pixel_dim[-1]]
+        translation_mm = [t_x,t_y,t_z]
 
-    # get the randomized rotation
-    rotation = [random.rand() * max_r ,random.rand() * max_r,random.rand() * max_r]
-    rotation = [i / 180 * np.pi for i in rotation]
+        # get the randomized rotation
+        rotation = [random.rand() * max_r ,random.rand() * max_r,random.rand() * max_r]
+        rotation = [i / 180 * np.pi for i in rotation]
+    else:
+        translation_mm = [max_t, max_t, max_t]
+        translation = [max_t/pixel_dim[0], max_t/pixel_dim[1], max_t/pixel_dim[-1]]
+        rotation = [max_r,max_r,max_r]
+        rotation = [i / 180 * np.pi for i in rotation]
     
     # get start view and end view
     # no motion situation:
     if sum(translation_mm) + sum(rotation) == 0:
         start_view = 0
         end_view = 0
+        lasting_view = 0
+        lasting_time = 0
     else:
         # get a randomized lasting time
         lasting_time = random.rand() * (time_range[1] - time_range[0]) + time_range[0]
@@ -82,9 +90,6 @@ def generate_random_3D_motion(max_t,max_r,pixel_dim = [0.68,0.68,1], time_range 
     return translation,translation_mm,rotation,start_view,end_view,lasting_view,lasting_time
 
     
-
-
-
 
 # def generate_random_transform(params, shape):
 
