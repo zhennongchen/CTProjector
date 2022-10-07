@@ -27,12 +27,12 @@ total_view = 2400
 gantry_rotation_time = 500 #unit ms
 time_range = [250,400] # unit ms
 view_increment = 10 # increment in gantry views
-main_save_folder = '/local/data/CT_motion/CT_images/simulated_data'
+main_save_folder = '/workspace/Documents/data/CT_motion/CT_images/simulated_data'
 folder_name = 'random_'
 
 # %%
 # define the patient list
-patient_list = ff.find_all_target_files(['example_CT_volume/*'],'/local/data/CT_motion/CT_images')
+patient_list = ff.find_all_target_files(['example_CT_volume/*'],'/workspace/Documents/data/CT_motion/CT_images')
 print(patient_list)
 
 # %%
