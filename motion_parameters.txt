@@ -1,7 +1,0 @@
-translation_mm : 5 5 5
-rotation_degree : 0.0 0.0 0.0
-start_view : 814
-end_view : 2387
-lasting_time : 327.74
-total_view : 2400
-gantry_rotation_time : 500
