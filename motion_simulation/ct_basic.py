@@ -34,9 +34,9 @@ from PIL import Image
 def basic_image_processing(filename):
     ct = nb.load(filename)
     spacing = ct.header.get_zooms()
-    img_raw = ct.get_fdata()
-
-    img = (img_raw.astype(np.float32) + 1024) / 1000 * 0.019
+    img = ct.get_fdata()
+    
+    img = (img.astype(np.float32) + 1024) / 1000 * 0.019
     img[img < 0] = 0
     img = np.rollaxis(img,-1,0)
 

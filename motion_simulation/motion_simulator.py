@@ -105,6 +105,8 @@ for p in img_list:
         recon = ct.filtered_backporjection(projection,angles,projector,fbp_projector,back_to_original_value=True)
         print(recon.shape)
         # save recon
+        # recon = recon / 0.019 * 1000 - 1024 # return to original values
+        # print('intensityu: ',recon[52,58,30])
         recon_nb = nb.Nifti1Image(np.rollaxis(recon,0,3),img_affine)
         nb.save(recon_nb, os.path.join(random_folder,'simulated','recon.nii.gz'))
         ff.save_grayscale_image(recon[int(recon.shape[0]/2),...].T, os.path.join(random_folder,'recon.png'))
