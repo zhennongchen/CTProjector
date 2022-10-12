@@ -32,20 +32,18 @@ folder_name = 'random_'
 
 # %%
 # define the patient list
-patient_list = ff.find_all_target_files(['example_CT_volume/*'],'/workspace/Documents/data/CT_motion/CT_images')
-print(patient_list)
+img_list = ff.find_all_target_files(['example_CT_volume/*/original/*.nii.gz'],'/workspace/Documents/data/CT_motion/CT_images')
+print(img_list)
 
-# %%
-for p in patient_list:
-    patient_id = ff.find_timeframe(p,2)
+
+for p in img_list:
+    patient_id = os.path.basename(os.path.dirname(os.path.dirname(p)))
     print('patient: ',patient_id)
-    save_folder = os.path.join(main_save_folder,'patient_' + str(patient_id))
+    save_folder = os.path.join(main_save_folder,patient_id)
     ff.make_folder([save_folder])
     
-    img,spacing = ct.basic_image_processing(p)
-    print('sitk image: shape:  ',img.shape, ' spacing: ',spacing)
-    img_nb = nb.load(p); img_affine = img_nb.affine
-    print('nib image shape: ',img_nb.shape)
+    img,spacing,img_affine = ct.basic_image_processing(p)
+    print('nib image shape: ',img.shape, ' spacing: ',spacing)
 
     # define projectors
     img = img[np.newaxis, ...]
@@ -63,9 +61,13 @@ for p in patient_list:
         
         # create folder
         random_folder = os.path.join(save_folder,folder_name +str(random_i + 1))
-        ff.make_folder([random_folder])
+        ff.make_folder([random_folder, os.path.join(random_folder,'simulated')])
 
         print('\n',random_i + 1 , 'random')
+
+        if os.path.isfile(os.path.join(random_folder,'simulated/recon.nii.gz')) == 1:
+            print('done')
+            continue
         
         # generate random motion
         # 10% pure translation, 10% pure rotation, 80% hybrid:
@@ -103,9 +105,9 @@ for p in patient_list:
         recon = ct.filtered_backporjection(projection,angles,projector,fbp_projector,back_to_original_value=True)
         print(recon.shape)
         # save recon
-        recon_nb = nb.Nifti1Image(np.rollaxis(np.rollaxis(recon,0,3),0,2),img_affine)
-        nb.save(recon_nb, os.path.join(random_folder,'recon.nii.gz'))
-        ff.save_grayscale_image(recon[int(recon.shape[0]/2),...], os.path.join(random_folder,'recon.png'))
+        recon_nb = nb.Nifti1Image(np.rollaxis(recon,0,3),img_affine)
+        nb.save(recon_nb, os.path.join(random_folder,'simulated','recon.nii.gz'))
+        ff.save_grayscale_image(recon[int(recon.shape[0]/2),...].T, os.path.join(random_folder,'recon.png'))
 
     
 

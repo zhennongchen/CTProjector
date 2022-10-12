@@ -15,18 +15,36 @@ import glob as gb
 import nibabel as nb
 from PIL import Image
 
+# for sitk:
+# def basic_image_processing(filename):
+#     ct = sitk.ReadImage(filename)
+#     spacing_raw = ct.GetSpacing()
+#     img_raw = sitk.GetArrayFromImage(ct)
+
+#     img = (img_raw.astype(np.float32) + 1024) / 1000 * 0.019
+#     img[img < 0] = 0
+#     img = img[::-1, ...]
+
+#     spacing = np.array(spacing_raw[::-1])
+
+#     return img,spacing
+
+
+# for nibabel:
 def basic_image_processing(filename):
-    ct = sitk.ReadImage(filename)
-    spacing_raw = ct.GetSpacing()
-    img_raw = sitk.GetArrayFromImage(ct)
+    ct = nb.load(filename)
+    spacing = ct.header.get_zooms()
+    img_raw = ct.get_fdata()
 
     img = (img_raw.astype(np.float32) + 1024) / 1000 * 0.019
     img[img < 0] = 0
-    img = img[::-1, ...]
+    img = np.rollaxis(img,-1,0)
 
-    spacing = np.array(spacing_raw[::-1])
+    spacing = np.array(spacing[::-1])
 
-    return img,spacing
+
+    return img,spacing,ct.affine
+
 
 def define_forward_projector(img,spacing,total_view):
     projector = ct_projector.ct_projector()
