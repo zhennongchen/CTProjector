@@ -30,7 +30,7 @@ class ct_projector:
     '''
     def __init__(self):
         self.nview = 720
-        self.rotview = 720 # gantry rotation angle in total
+        self.rotview = 720
         self.nu = 512
         self.nv = 512
         self.nx = 512
@@ -154,7 +154,7 @@ class ct_projector:
         else:
             weight = 1
 
-        x = np.random.uniform(size=[1, self.nz, self.ny, self.nx], dtype=np.float32)
+        x = np.random.uniform(size=[1, self.nz, self.ny, self.nx]).astype(np.float32)
         x = x / np.linalg.norm(x)
 
         for i in range(niter):
@@ -193,9 +193,3 @@ class ct_projector:
         Get the angles for each view in circular geometry.
         '''
         return np.arange(0, self.nview, dtype=np.float32) * 2 * np.pi / self.nview
-
-    # def get_angles_specify_angles(self,total_angle,start_angle) -> np.array:
-    #     '''
-    #     Get the angles for each view in circular geometry.
-    #     '''
-    #     return np.arange(0, self.nview, dtype=np.float32) * (total_angle / 180 * np.pi) / self.nview + start_angle

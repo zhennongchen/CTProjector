@@ -100,6 +100,7 @@ numpy | fan_equiangular | siddon_fp(bp) | Fanbeam equiangular | Circular | Siddo
 cupy, numpy | fan_equiangular | ramp_filter, fbp_bp | Fanbeam equiangular | Circular | Pixel driven FBP | No |
 cupy, numpy | fan_equiangular | distance_driven_fp(bp) | Fanbeam equiangular | Circular | Distance driven | Yes |
 cupy, numpy | parallel | distance_driven_fp(bp) | Parallel beam | Circular | Distance driven | Yes |
+numpy | parallel | pixel_driven_bp | Parallel beam | Circular | Pixel driven | No |
 cupy, numpy | parallel | ramp_filter | Parallel beam | Circular | Filter | No |
 numpy | helical_equiangular_parallel_rebin | helical parallel rebin/BP | Conebeam equiangular | Helical | Rebin to parallel and FBP | No | Rebin + parallel.ramp_filter + BP for reconstruction. There is also padding functions to handle the Siemens dual source CT. The parallel conebeam rebinning is more accurate than single-slice rebinning and introduce less error between the A and B reconstructions.
 
@@ -108,6 +109,8 @@ numpy | helical_equiangular_parallel_rebin | helical parallel rebin/BP | Conebea
 Module | Name | Detector | Trajectory | Algorithm | Comments 
 ---- | ---- | ---- | ---- | ---- | ---- 
 cone | SiddonFP(BP)Arbitrary | Conebeam flat panel | Arbitrary | Siddon | None
+circular_2d | DistanceDriven2DFP(BP) | Parallel beam | Circular | Distance driven | see ex_fp_bp_dd_tf.ipynb
+filters | ProjectionFilter | Parallel beam | Circular | RL, Hann | see ex_fp_bp_dd_tf.ipynb
 
 ### Priors
 
@@ -119,4 +122,4 @@ cupy, numpy | nlm | (Guided) Non-local mean | Gaussian | SQS | Needed component 
 
 Cupy/Numpy | Name | Comments
 ---- | ---- | ----
-cupy | sqs_gaussian | 
+cupy, numpy | sqs_gaussian | 
