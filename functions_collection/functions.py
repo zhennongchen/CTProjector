@@ -3,6 +3,9 @@ import glob
 import os
 from PIL import Image
 
+def get_angles_zc(nview, total_angle,start_angle):
+    return np.arange(0, nview, dtype=np.float32) * (total_angle / 180 * np.pi) / nview + (start_angle / 180 * np.pi)
+
 # function: set window level
 def set_window(image,level,width):
     if len(image.shape) == 3:
