@@ -5,6 +5,7 @@ Unified numpy as cupy through importing.
 '''
 
 from scipy.ndimage import shift
+import numpy as np
 
 
 from typing import Union, Tuple, Callable, Any
@@ -110,12 +111,7 @@ def sqs_gaussian_one_step(
     if weight is None:
         weight = 1
     
-  
-    img_np = cp.asnumpy(img)
-    img_np = shift(img_np, (20, 20), mode='constant', cval=0)
-    img = cp.asarray(img_np)
-    print('did shift')
-
+    
 
     # A.Tw(Ax)
     fp = projector.fp(img) / projector_norm
