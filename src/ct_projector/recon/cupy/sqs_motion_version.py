@@ -65,7 +65,6 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
         cuimg = cp.array(origin_img, cp.float32, order = 'C')
         cuangles = cp.array(angles[view_start : view_end], cp.float32, order = 'C')
 
-       
         cufp = projector.fp(cuimg, angles = cuangles) / projector_norm
 
         fp = cufp.get()
@@ -75,6 +74,7 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
     # print('how many MVF?: ',len(MVF_list))
     # print('projection shape: ',projection.shape)
     return cp.array(projection, cp.float32, order = 'C'), MVF_list
+
 
 
 def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
@@ -199,6 +199,7 @@ def sqs_gaussian_one_step_motion(
 
     fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3)
 
+
     # calculate the error:
     fp = fp - prj / projector_norm
 
@@ -211,7 +212,8 @@ def sqs_gaussian_one_step_motion(
     img = img - (bp + beta * gauss) / (norm_img + beta * 8)
 
     if return_loss:
-        fp = projector.fp(img) / projector_norm
+        # fp = projector.fp(img) / projector_norm
+        fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3)
         data_loss = 0.5 * cp.sum(weight * (fp - prj / projector_norm)**2)
 
         nlm = gaussian_func(img)

@@ -69,17 +69,7 @@ PAR = nb.load(os.path.join(save_folder, 'PAR_corrected.nii.gz' )).get_fdata(); P
 img_ds2 = np.copy(img_ds[:, 30:35,:,:])
 
 # define projector
-projector_ir = ct_projector.ct_projector()
-projector_ir.from_file('projector_fan.cfg')
-projector_ir.nv = 1
-projector_ir.nz = 1
-projector_ir.ny = img_ds2.shape[2]
-projector_ir.nx = img_ds2.shape[3]
-projector_ir.du = projector_ir.du * projector_ir.dso / projector_ir.dsd 
-projector_ir.dx = spacing[2]
-projector_ir.dy = spacing[1]
-projector_ir.dz = spacing[0]
-projector_ir.nview = 1000
+projector_ir = projector
 
 angles = ff.get_angles_zc(1000, 360,0)
 origin_img = img_ds2[0,...]
