@@ -26,12 +26,12 @@ else:
     raise ValueError('Backend not supported.', BACKEND)
 
 
-def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
+def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
 
     projection = np.zeros([img.shape[1],angles.shape[0],1,projector.nu])
-    view_to_time = gantry_rotation_time / total_view
+    view_to_time = gantry_rotation_time / total_view_num
 
-    steps = int(total_view // increment)
+    steps = int(total_view_num // increment)
 
 
     MVF_list = []
@@ -65,7 +65,7 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
         cuimg = cp.array(origin_img, cp.float32, order = 'C')
         cuangles = cp.array(angles[view_start : view_end], cp.float32, order = 'C')
 
-        cufp = projector.fp(cuimg, angles = cuangles) / projector_norm
+        cufp = projector.fp(cuimg, angles = cuangles) /projector_norm
 
         fp = cufp.get()
 
@@ -77,12 +77,12 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
 
 
 
-def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
+def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view_num = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
     projection = cp.asnumpy(fp)
 
     final_img = np.zeros(img.shape)
 
-    view_to_time = gantry_rotation_time / total_view
+    view_to_time = gantry_rotation_time / total_view_num
 
     for step in range(0, len(MVF_list)):
 
@@ -100,7 +100,6 @@ def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_
         # print('recon part shape: ',recon_part.shape)
        
         # apply motion
-        # transformation_matrix = np.transpose(MVF_list[step])
 
         t_end = view_end * view_to_time
         
@@ -111,7 +110,6 @@ def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_
 
         _,_,_,transformation_matrix = transform.generate_transform_matrix(translation_,rotation_,[1,1,1],recon_part.shape, which_one_is_first='translation')
         transformation_matrix = transform.transform_full_matrix_offset_center(transformation_matrix, recon_part.shape)
-
 
         img_new = transform.apply_affine_transform(recon_part, transformation_matrix ,order)
 
@@ -132,8 +130,19 @@ def sqs_gaussian_one_step_motion(
     norm_img: cp.array,
     projector_norm: float,
     beta: float,
+    t: np.array,
+    amplitude_tx: np.array,
+    amplitude_ty: np.array,
+    amplitude_tz: np.array,
+    amplitude_rx: np.array,
+    amplitude_ry: np.array, 
+    amplitude_rz: np.array, 
+    sga: float,
+    total_view_num: int, 
+    increment: int, 
+    gantry_rotation_time: int,
     weight: cp.array = None,
-    return_loss: bool = False
+    return_loss: bool = False,
 ) -> Union[cp.array, Tuple[cp.array, float, float]]:
     '''
     sqs with gaussian prior. Please see the doc/sqs_equations, section 4.
@@ -177,13 +186,6 @@ def sqs_gaussian_one_step_motion(
     
   
     # let's define the motion:
-    t = np.linspace(0, 500, 5, endpoint=True)
-    amplitude_tx = np.linspace(0,10,5)
-    amplitude_ty = np.linspace(0,10,5)
-    amplitude_tz = np.linspace(0,0,5)
-    amplitude_rx = np.linspace(0,0/180*np.pi,5)
-    amplitude_ry = np.linspace(0,0/180*np.pi,5)
-    amplitude_rz = np.linspace(0,10/180*np.pi,5)
     spline_tx = transform.interp_func(t, amplitude_tx)
     spline_ty = transform.interp_func(t, amplitude_ty)
     spline_tz = transform.interp_func(t, amplitude_tz)
@@ -195,16 +197,15 @@ def sqs_gaussian_one_step_motion(
     img_np = cp.asnumpy(img[:,0,:,:]); img_np = img_np[np.newaxis,...]
 
     # do forward projection:
-    angles = ff.get_angles_zc(1000, 360,0)
+    angles = ff.get_angles_zc(total_view_num, 360, sga)
 
-    fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3)
-
+    fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment , order = 3)
 
     # calculate the error:
     fp = fp - prj / projector_norm
 
     # do backprojection, final bp should have [z,1,x,y]
-    bp = sqs_bp_w_motion(fp, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3)
+    bp = sqs_bp_w_motion(fp, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment, order = 3)
 
 
     # sqs
@@ -213,8 +214,9 @@ def sqs_gaussian_one_step_motion(
 
     if return_loss:
         # fp = projector.fp(img) / projector_norm
-        fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view = 1000, gantry_rotation_time = 500, increment = 100 , order = 3)
+        fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment , order = 3)
         data_loss = 0.5 * cp.sum(weight * (fp - prj / projector_norm)**2)
+        # data_loss = cp.mean(cp.abs(fp - prj))
 
         nlm = gaussian_func(img)
         nlm2 = gaussian_func(img * img)
