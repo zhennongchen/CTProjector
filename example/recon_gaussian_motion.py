@@ -64,7 +64,7 @@ amplitude_rx = np.linspace(0,0/180*np.pi,5)
 amplitude_ry = np.linspace(0,0/180*np.pi,5)
 amplitude_rz = np.linspace(0,0/180*np.pi,5)
 t = np.linspace(0, gantry_rotation_time, 5, endpoint=True)
-sga = 45
+sga = 0
 
 file_name = os.path.join(save_folder,'spline1.npy')
 geometry = 'fan'
