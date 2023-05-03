@@ -16,7 +16,7 @@ import HeadCT_motion_correction_PAR.motion_simulator.transformation as transform
 import CTProjector.src.ct_projector.projector.cupy as ct_projector
 import CTProjector.src.ct_projector.recon.cupy as ct_recon
 import CTProjector.src.ct_projector.projector.cupy.fan_equiangular as ct_fan
-
+#
 def generate_and_save_sinograms_spline_motion(img, total_angle, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = 0, load_file = False, geometry = 'fan', total_view_num = 1000, increment = 100, gantry_rotation_time = 500):
     t = np.linspace(0,gantry_rotation_time, 5, endpoint=True)
     spline_tx = transform.interp_func(t, np.asarray(amplitude_tx))

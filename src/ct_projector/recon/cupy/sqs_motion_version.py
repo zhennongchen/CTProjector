@@ -26,7 +26,7 @@ else:
     raise ValueError('Backend not supported.', BACKEND)
 
 
-def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
+def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num, gantry_rotation_time , increment  , order = 3):
 
     projection = np.zeros([img.shape[1],angles.shape[0],1,projector.nu])
     view_to_time = gantry_rotation_time / total_view_num
@@ -77,7 +77,7 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
 
 
 
-def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view_num = 1000, gantry_rotation_time = 500, increment = 100 , order = 3):
+def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, total_view_num , gantry_rotation_time, increment ,  weight = 1, order = 3):
     projection = cp.asnumpy(fp)
 
     final_img = np.zeros(img.shape)
@@ -130,13 +130,12 @@ def sqs_gaussian_one_step_motion(
     norm_img: cp.array,
     projector_norm: float,
     beta: float,
-    t: np.array,
-    amplitude_tx: np.array,
-    amplitude_ty: np.array,
-    amplitude_tz: np.array,
-    amplitude_rx: np.array,
-    amplitude_ry: np.array, 
-    amplitude_rz: np.array, 
+    spline_tx: callable,
+    spline_ty: callable,
+    spline_tz: callable,
+    spline_rx: callable,
+    spline_ry: callable, 
+    spline_rz: callable, 
     sga: float,
     total_view_num: int, 
     increment: int, 
@@ -183,15 +182,6 @@ def sqs_gaussian_one_step_motion(
 
     if weight is None:
         weight = 1
-    
-  
-    # let's define the motion:
-    spline_tx = transform.interp_func(t, amplitude_tx)
-    spline_ty = transform.interp_func(t, amplitude_ty)
-    spline_tz = transform.interp_func(t, amplitude_tz)
-    spline_rx = transform.interp_func(t, amplitude_rx)
-    spline_ry = transform.interp_func(t, amplitude_ry)
-    spline_rz = transform.interp_func(t, amplitude_rz)
 
     # turn cupy array [z,1,x,y] to numpy array[z,x,y]
     img_np = cp.asnumpy(img[:,0,:,:]); img_np = img_np[np.newaxis,...]
@@ -205,8 +195,7 @@ def sqs_gaussian_one_step_motion(
     fp = fp - prj / projector_norm
 
     # do backprojection, final bp should have [z,1,x,y]
-    bp = sqs_bp_w_motion(fp, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, weight = 1, total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment, order = 3)
-
+    bp = sqs_bp_w_motion(fp, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment, weight = 1,order = 3)
 
     # sqs
     gauss = 4 * (img - gaussian_func(img))
