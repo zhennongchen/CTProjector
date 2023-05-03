@@ -54,15 +54,15 @@ print(img_ds.shape)
 
 
 # define motion and make sinogram
-total_view_num = 1000
-increment = 100
+total_view_num = 1400
+increment = 56
 gantry_rotation_time = 500
-amplitude_tx = np.linspace(0,0,5)
+amplitude_tx = np.asarray([0, 0.5, 1.987, 2.659, 0.66]) #np.linspace(0,0,5)
 amplitude_ty = np.linspace(0,0,5)
-amplitude_tz = np.linspace(0,5,5)
-amplitude_rx = np.linspace(0,0/180*np.pi,5)
+amplitude_tz = np.asarray([0, 0.864, 2.762, 2.346, 1.508])  #np.linspace(0,5,5)
+amplitude_rx = np.asarray([0, -1.1, -2.422, -2.652, -0.302]) / 180 * np.pi #np.linspace(0,0/180*np.pi,5)
 amplitude_ry = np.linspace(0,0/180*np.pi,5)
-amplitude_rz = np.linspace(0,0/180*np.pi,5)
+amplitude_rz = np.asarray([0,-0.4, -2.077, -1.343, -0.418]) / 180 * np.pi #np.linspace(0,0/180*np.pi,5)
 t = np.linspace(0, gantry_rotation_time, 5, endpoint=True)
 sga = 0
 
