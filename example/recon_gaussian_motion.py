@@ -54,17 +54,24 @@ print(img_ds.shape)
 
 
 # define motion and make sinogram
-total_view_num = 1400
-increment = 56
+total_view_num = 1000
+increment = 100
 gantry_rotation_time = 500
-amplitude_tx = np.asarray([0, 0.5, 1.987, 2.659, 0.66]) #np.linspace(0,0,5)
+amplitude_tx = np.linspace(0,0,5)
 amplitude_ty = np.linspace(0,0,5)
-amplitude_tz = np.asarray([0, 0.864, 2.762, 2.346, 1.508])  #np.linspace(0,5,5)
-amplitude_rx = np.asarray([0, -1.1, -2.422, -2.652, -0.302]) / 180 * np.pi #np.linspace(0,0/180*np.pi,5)
+amplitude_tz = np.linspace(0,5,5)
+amplitude_rx = np.linspace(0,0/180*np.pi,5)
 amplitude_ry = np.linspace(0,0/180*np.pi,5)
-amplitude_rz = np.asarray([0,-0.4, -2.077, -1.343, -0.418]) / 180 * np.pi #np.linspace(0,0/180*np.pi,5)
+amplitude_rz = np.linspace(0,0/180*np.pi,5)
 t = np.linspace(0, gantry_rotation_time, 5, endpoint=True)
 sga = 0
+
+spline_tx = transform.interp_func(t, amplitude_tx)
+spline_ty = transform.interp_func(t, amplitude_ty)
+spline_tz = transform.interp_func(t, amplitude_tz)
+spline_rx = transform.interp_func(t, amplitude_rx)
+spline_ry = transform.interp_func(t, amplitude_ry)
+spline_rz = transform.interp_func(t, amplitude_rz)
 
 file_name = os.path.join(save_folder,'spline1.npy')
 geometry = 'fan'
@@ -72,11 +79,8 @@ load_file = True
 angles, sinogram, total_angle, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, geometry, projector = generate_and_save_sinograms_spline_motion(img_ds, 360, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = sga, load_file = load_file, geometry = geometry, total_view_num = total_view_num, increment = increment)
 
 
-# load FBP
-fbp_motion = nb.load(os.path.join(save_folder, 'motion.nii.gz')).get_fdata(); fbp_motion = np.rollaxis(fbp_motion,2,0)
-
 # load PAR_corrected 
-PAR = nb.load(os.path.join(save_folder, 'PAR_corrected.nii.gz' )).get_fdata(); PAR = np.rollaxis(PAR,2,0)
+PAR = nb.load(os.path.join(save_folder, 'PAR_corrected.nii.gz' )).get_fdata(); PAR = np.rollaxis(PAR,2,0))
 
 
 # Iterative recon:
@@ -101,20 +105,17 @@ PAR_corrected = (PAR.astype(np.float32) + 1024) / 1000 * 0.019
 PAR_corrected[PAR_corrected < 0] = 0
 PAR_corrected = PAR_corrected[:,np.newaxis,...]
 
-fbp_motion2 = (fbp_motion.astype(np.float32) + 1024) / 1000 * 0.019
-fbp_motion2[fbp_motion2 < 0] = 0
-fbp_motion2 = fbp_motion2[:,np.newaxis,...]
-
 # sinogram_part = sinogram[20:40,...]
 
 niter = 900
-nos = 12
+nos = 3
 nesterov = 0.5
 beta = 0
 zero_init = False
 
 projector_norm = projector_ir.calc_projector_norm()
 cunorm_img = projector_ir.calc_norm_img() / projector_norm / projector_norm
+
 
 cufbp = cp.array(PAR_corrected ,order='C')
 cuprj2 = cp.array(sinogram, cp.float32, order = 'C')
@@ -142,13 +143,12 @@ for i in range(0,niter):
                 'norm_img': cunorm_img,
                 'projector_norm': projector_norm,
                 'beta': beta,
-                't': t,
-                'amplitude_tx': amplitude_tx,
-                'amplitude_ty': amplitude_ty,
-                'amplitude_tz': amplitude_tz,
-                'amplitude_rx': amplitude_rx,
-                'amplitude_ry': amplitude_ry,
-                'amplitude_rz': amplitude_rz,
+                'spline_tx': spline_tx,
+                'spline_ty': spline_ty,
+                'spline_tz': spline_tz,
+                'spline_rx': spline_rx,
+                'spline_ry': spline_ry,
+                'spline_rz': spline_rz,
                 'sga': float(sga),
                 'total_view_num': total_view_num,
                 'increment': increment ,
@@ -164,13 +164,12 @@ for i in range(0,niter):
         cunorm_img,
         projector_norm,
         beta,
-        t,
-        amplitude_tx,
-        amplitude_ty,
-        amplitude_tz,
-        amplitude_rx,
-        amplitude_ry,
-        amplitude_rz,
+        spline_tx,
+        spline_ty,
+        spline_tz,
+        spline_rx,
+        spline_ry,
+        spline_rz,
         float(sga),
         total_view_num,
         increment, 
@@ -190,3 +189,5 @@ for i in range(0,niter):
     recon_ir = recon_ir / 0.019 * 1000 - 1024
 
     nb.save(nb.Nifti1Image(np.rollaxis(recon_ir,0,3),affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_' + str(i)+'.nii.gz'))
+    # nb.save(nb.Nifti1Image(curecon.get(),affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_raw' + str(i)+'.nii.gz'))
+    # cp.save(os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_raw' + str(i)+'.npy'), curecon)
