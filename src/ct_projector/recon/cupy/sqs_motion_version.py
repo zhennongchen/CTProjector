@@ -97,7 +97,7 @@ def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_
 
         curecon_part = projector.bp(cu_projection_part * weight, angles = cu_angles_partial) / projector_norm
         recon_part = curecon_part.get()[:,0,:,:]
-        # print('recon part shape: ',recon_part.shape)
+     
        
         # apply motion
 

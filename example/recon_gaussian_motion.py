@@ -97,7 +97,7 @@ curef = cp.array(origin_img, order='C')
 cuangles = cp.array(angles, order='C')
 
 projector_ir.set_projector(ct_fan.distance_driven_fp, angles=cuangles, branchless = False)
-projector_ir.set_backprojector(ct_fan.distance_driven_bp, angles=cuangles, is_fbp = True)
+projector_ir.set_backprojector(ct_fan.distance_driven_bp, angles=cuangles)  # no FBP!!
 
 
 # doing recon
