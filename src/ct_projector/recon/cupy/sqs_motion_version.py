@@ -81,7 +81,7 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
 
 
 
-def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, total_view_num , gantry_rotation_time, increment ,  weight = 1, order = 3):
+def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, total_view_num , gantry_rotation_time, increment ,  weight = 1, order = 3 , use_t_end = True):
     projection = cp.asnumpy(fp)
 
     final_img = np.zeros(img.shape)
@@ -104,11 +104,16 @@ def sqs_bp_w_motion(fp, MVF_list, img, projector,projector_norm, angles, spline_
      
        
         # apply motion
-
         t_end = view_end * view_to_time
+        t_start = view_start * view_to_time
+        if use_t_end == True:
+            tt = t_end
+        else: 
+            tt = t_start
         
-        translation_ = [-spline_tz(np.array([t_end])), -spline_tx(np.array([t_end])), -spline_ty(np.array([t_end]))]
-        rotation_ = [-spline_rz(np.array([t_end])), -spline_rx(np.array([t_end])), -spline_ry(np.array([t_end]))]
+        
+        translation_ = [-spline_tz(np.array([tt])), -spline_tx(np.array([tt])), -spline_ty(np.array([tt]))]
+        rotation_ = [-spline_rz(np.array([tt])), -spline_rx(np.array([tt])), -spline_ry(np.array([tt]))]
 
         # print('step, t_end, translation_, rotation_:',step, t_end, translation_, [r/np.pi * 180 for r in rotation_])
 

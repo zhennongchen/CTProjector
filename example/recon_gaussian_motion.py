@@ -76,8 +76,8 @@ angles, sinogram, total_angle, spline_tx, spline_ty, spline_tz, spline_rx, splin
 print(sinogram.shape)
 
 # load PAR_corrected 
-# PAR = nb.load(os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolution','PAR_corrected_HR.nii.gz' )).get_fdata()
-PAR = nb.load(os.path.join(save_folder,'IR_recon','IR_corrected_25.nii.gz' )).get_fdata()
+PAR = nb.load(os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolution','PAR_corrected_HR.nii.gz' )).get_fdata()
+# PAR = nb.load(os.path.join(save_folder,'IR_recon','IR_corrected_25.nii.gz' )).get_fdata()
 print(PAR.shape)
 
 mae_par,_,rmse_par,_, ssim_par = ff.compare(PAR[:,:,10:50], static[:,:,10:50],cutoff_low = -10, extreme = 1000)
@@ -106,7 +106,7 @@ PAR_corrected = PAR_corrected[:,np.newaxis,...]
 
 
 niter = 400
-nos = 5
+nos = 1
 nesterov = 0.5
 beta = 0
 zero_init = False
@@ -162,10 +162,10 @@ for i in range(0,niter):
     recon_ir = np.rollaxis(recon_ir,0,3)
     mae_ir,_,rmse_ir,_, ssim_ir = ff.compare(recon_ir[:,:,10:50], static[:,:,10:50],cutoff_low = -10, extreme = 1000)
 
-    nb.save(nb.Nifti1Image(recon_ir,affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR_recon','IR_corrected_' + str(i)+'.nii.gz'))
+    # nb.save(nb.Nifti1Image(recon_ir,affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR_recon','IR_corrected_' + str(i)+'.nii.gz'))
 
     print('IR results: ', data_loss, mae_ir, rmse_ir, ssim_ir)
 
-    Result.append([i, data_loss, mae_ir, rmse_ir, ssim_ir])
-    df = pd.DataFrame(Result, columns = ['step', 'data_loss', 'mae_ir', 'rmse_ir', 'ssim_ir'])
-    df.to_excel('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/loss_record_start_from_PAR.xlsx', index = False)
+    # Result.append([i, data_loss, mae_ir, rmse_ir, ssim_ir])
+    # df = pd.DataFrame(Result, columns = ['step', 'data_loss', 'mae_ir', 'rmse_ir', 'ssim_ir'])
+    # df.to_excel('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/loss_record_start_from_PAR.xlsx', index = False)
