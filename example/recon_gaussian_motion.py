@@ -73,7 +73,7 @@ file_name = os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolu
 geometry = 'fan'
 load_file = True
 angles, sinogram, total_angle, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, geometry, projector = generate_and_save_sinograms_spline_motion(img, 360, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = sga, load_file = load_file, geometry = geometry, total_view_num = total_view_num, increment = increment)
-
+print(sinogram.shape)
 
 # load PAR_corrected 
 # PAR = nb.load(os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolution','PAR_corrected_HR.nii.gz' )).get_fdata()
@@ -131,7 +131,7 @@ else:
 for i in range(0,niter):
     for n in range(0,nos):
 
-        curecon, cunesterov = ct_recon.nesterov_acceleration_motion(
+        curecon, cunesterov, data_loss, _ = ct_recon.nesterov_acceleration_motion(
             ct_recon.sqs_gaussian_one_step_motion,
             img=curecon,
             img_nesterov=cunesterov,
@@ -150,30 +150,11 @@ for i in range(0,niter):
                 'sga': float(sga),
                 'total_view_num': total_view_num,
                 'increment': increment ,
-                'gantry_rotation_time': gantry_rotation_time
+                'gantry_rotation_time': gantry_rotation_time,
+                'return_loss':  True,
+                'use_t_end': True,
             }
         )
-
-    # if (i + 1) % 10 == 0:
-    _, data_loss, _ = ct_recon.sqs_gaussian_one_step_motion(
-        projector_ir,
-        curecon,
-        cuprj2,
-        cunorm_img,
-        projector_norm,
-        beta,
-        spline_tx,
-        spline_ty,
-        spline_tz,
-        spline_rx,
-        spline_ry,
-        spline_rz,
-        float(sga),
-        total_view_num,
-        increment, 
-        gantry_rotation_time,
-        return_loss=True
-    )
 
     recon_ir = curecon.get()[:,0,:,:]
     recon_ir = recon_ir / 0.019 * 1000 - 1024

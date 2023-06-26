@@ -26,7 +26,7 @@ else:
     raise ValueError('Backend not supported.', BACKEND)
 
 
-def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num, gantry_rotation_time , increment  , order = 3):
+def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num, gantry_rotation_time , increment  , order = 3, use_t_end = True):
 
     projection = np.zeros([img.shape[1],angles.shape[0],1,projector.nu])
     view_to_time = gantry_rotation_time / total_view_num
@@ -43,11 +43,15 @@ def sqs_fp_w_motion(img, projector,projector_norm, angles, spline_tx, spline_ty,
 
         t_end = view_end * view_to_time
         
-        translation_ = [spline_tz(np.array([t_end])), spline_tx(np.array([t_end])), spline_ty(np.array([t_end]))]
-        rotation_ = [spline_rz(np.array([t_end])), spline_rx(np.array([t_end])), spline_ry(np.array([t_end]))]
+        if use_t_end == True:
+            tt = t_end
+        else:
+            tt = view_start * view_to_time
 
-        # print('step, t_end, translation_, rotation_:',ss, t_end, translation_, [r/np.pi * 180 for r in rotation_])
+        translation_ = [spline_tz(np.array([tt])), spline_tx(np.array([tt])), spline_ty(np.array([tt]))]
+        rotation_ = [spline_rz(np.array([tt])), spline_rx(np.array([tt])), spline_ry(np.array([tt]))]
 
+        # print('step, tt, translation_, rotation_:',step, tt, translation_, [r/np.pi * 180 for r in rotation_])
 
         I = img[0,...]
         _,_,_,transformation_matrix = transform.generate_transform_matrix(translation_,rotation_,[1,1,1],I.shape)
@@ -142,6 +146,7 @@ def sqs_gaussian_one_step_motion(
     gantry_rotation_time: int,
     weight: cp.array = None,
     return_loss: bool = False,
+    use_t_end: bool = True,
 ) -> Union[cp.array, Tuple[cp.array, float, float]]:
     '''
     sqs with gaussian prior. Please see the doc/sqs_equations, section 4.
@@ -189,13 +194,13 @@ def sqs_gaussian_one_step_motion(
     # do forward projection:
     angles = ff.get_angles_zc(total_view_num, 360, sga)
 
-    fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment , order = 3)
+    fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment , order = 3, use_t_end = use_t_end)
 
     # calculate the error:
-    fp = fp - prj / projector_norm
+    fp_delta = fp - prj / projector_norm
 
     # do backprojection, final bp should have [z,1,x,y]
-    bp = sqs_bp_w_motion(fp, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment, weight = 1,order = 3)
+    bp = sqs_bp_w_motion(fp_delta, MVF_list, img[:,0,:,:], projector,projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment, weight = 1,order = 3)
 
     # sqs
     gauss = 4 * (img - gaussian_func(img))
@@ -203,7 +208,6 @@ def sqs_gaussian_one_step_motion(
 
     if return_loss:
         # fp = projector.fp(img) / projector_norm
-        fp, MVF_list = sqs_fp_w_motion(img_np, projector, projector_norm, angles, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz,  total_view_num = total_view_num, gantry_rotation_time = gantry_rotation_time, increment = increment , order = 3)
         data_loss = 0.5 * cp.sum(weight * (fp - prj / projector_norm)**2)
         # data_loss = cp.mean(cp.abs(fp - prj))
 
@@ -264,43 +268,3 @@ def nesterov_acceleration_motion(
         img_nesterov = res
 
         return img, img_nesterov
-
-
-
-
-# def sqs_one_step_motion(
-#     projector: ct_projector,
-#     img: cp.array,
-#     prj: cp.array,
-#     norm_img: cp.array,
-#     projector_norm: float,
-#     beta: float,
-#     prior_func: Callable[..., Union[cp.array, Tuple[Any, ...]]],
-#     prior_kwargs: dict,
-#     acc_fac: float = 1,
-#     fp_kwargs: dict = {},
-#     bp_kwargs: dict = {},
-#     weight: cp.array = None,
-#     return_loss: bool = False,
-# ):
-#     if weight is None:
-#         weight = 1
-
-#     # A.Tw(Ax)
-#     fp = projector.fp(img, **fp_kwargs) / projector_norm
-#     fp = fp - prj / projector_norm
-#     bp = projector.bp(fp * weight, **bp_kwargs) / projector_norm
-
-#     # sqs
-#     prior_kwargs['img'] = img
-#     prior_res = prior_func(**prior_kwargs)
-#     img = img - (bp * acc_fac + beta * prior_res[0]) / (norm_img + beta * prior_res[1])
-
-#     if return_loss:
-#         fp = projector.fp(img) / projector_norm
-#         data_loss = 0.5 * cp.sum(weight * (fp - prj / projector_norm)**2)
-#         prior_loss = cp.sum(prior_res[2])
-
-#         return img, data_loss, prior_loss
-#     else:
-#         return img
