@@ -111,7 +111,6 @@ def sqs_gaussian_one_step(
     if weight is None:
         weight = 1
     
-    
 
     # A.Tw(Ax)
     fp = projector.fp(img) / projector_norm

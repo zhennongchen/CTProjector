@@ -18,7 +18,7 @@ import CTProjector.src.ct_projector.recon.cupy as ct_recon
 import CTProjector.src.ct_projector.projector.cupy.fan_equiangular as ct_fan
 #
 def generate_and_save_sinograms_spline_motion(img, total_angle, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = 0, load_file = False, geometry = 'fan', total_view_num = 1000, increment = 100, gantry_rotation_time = 500):
-    t = np.linspace(0,gantry_rotation_time, 5, endpoint=True)
+    t = np.linspace(gantry_rotation_time / 10,gantry_rotation_time, 10, endpoint=True)
     spline_tx = transform.interp_func(t, np.asarray(amplitude_tx))
     spline_ty = transform.interp_func(t, np.asarray(amplitude_ty))
     spline_tz = transform.interp_func(t, np.asarray(amplitude_tz))
@@ -41,31 +41,27 @@ def generate_and_save_sinograms_spline_motion(img, total_angle, amplitude_tx, am
 
 save_folder = '/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/'
 
-# load image
-filename = '/mnt/mount_zc_NAS/motion_correction/data/raw_data/nii-images/thin_slice/MO101701M000006/MO001A000007/img-nii-2.5/img.nii.gz'
+# load static image
+# filename = '/mnt/mount_zc_NAS/motion_correction/data/raw_data/nii-images/thin_slice/MO101701M000006/MO001A000007/img-nii-2.5/img.nii.gz'
+filename = os.path.join(save_folder, 'rx4rz4_sga0_increment100_fan_high_z_resolution/static_HR_slice60-100fromoriginal.nii.gz')
+static = nb.load(filename).get_fdata()
 img,spacing,affine = basic.basic_image_processing(filename)
-
-new_img = np.zeros([40,234,234])
-img = img[20:40,...]
-new_img[10:30,...] = img
-img_ds = np.copy(new_img)
-img_ds = img_ds[np.newaxis, ...]
-print(img_ds.shape)
-
+img = img[np.newaxis,...]
+print(img.shape)
 
 # define motion and make sinogram
 total_view_num = 1000
 increment = 100
 gantry_rotation_time = 500
-amplitude_tx = np.linspace(0,0,5)
-amplitude_ty = np.linspace(0,0,5)
-amplitude_tz = np.linspace(0,5,5)
-amplitude_rx = np.linspace(0,0/180*np.pi,5)
-amplitude_ry = np.linspace(0,0/180*np.pi,5)
-amplitude_rz = np.linspace(0,0/180*np.pi,5)
-t = np.linspace(0, gantry_rotation_time, 5, endpoint=True)
+amplitude_tx = np.linspace(0,0,10)
+amplitude_ty = np.linspace(0,0,10)
+amplitude_tz = np.linspace(0,0,10)
+amplitude_rx = np.linspace(0.4/180 * np.pi ,4/180*np.pi,10)
+amplitude_ry = np.linspace(0,0/180*np.pi,10)
+amplitude_rz = np.linspace(0.4/180 * np.pi ,4/180*np.pi,10)
 sga = 0
 
+t = np.linspace(gantry_rotation_time / 10,gantry_rotation_time, 10, endpoint=True)
 spline_tx = transform.interp_func(t, amplitude_tx)
 spline_ty = transform.interp_func(t, amplitude_ty)
 spline_tz = transform.interp_func(t, amplitude_tz)
@@ -73,24 +69,26 @@ spline_rx = transform.interp_func(t, amplitude_rx)
 spline_ry = transform.interp_func(t, amplitude_ry)
 spline_rz = transform.interp_func(t, amplitude_rz)
 
-file_name = os.path.join(save_folder,'spline1.npy')
+file_name = os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolution','spline1.npy')
 geometry = 'fan'
 load_file = True
-angles, sinogram, total_angle, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, geometry, projector = generate_and_save_sinograms_spline_motion(img_ds, 360, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = sga, load_file = load_file, geometry = geometry, total_view_num = total_view_num, increment = increment)
+angles, sinogram, total_angle, spline_tx, spline_ty, spline_tz, spline_rx, spline_ry, spline_rz, geometry, projector = generate_and_save_sinograms_spline_motion(img, 360, amplitude_tx, amplitude_ty, amplitude_tz, amplitude_rx, amplitude_ry, amplitude_rz, file_name , sga = sga, load_file = load_file, geometry = geometry, total_view_num = total_view_num, increment = increment)
 
 
 # load PAR_corrected 
-PAR = nb.load(os.path.join(save_folder, 'PAR_corrected.nii.gz' )).get_fdata(); PAR = np.rollaxis(PAR,2,0))
+# PAR = nb.load(os.path.join(save_folder,'rx4rz4_sga0_increment100_fan_high_z_resolution','PAR_corrected_HR.nii.gz' )).get_fdata()
+PAR = nb.load(os.path.join(save_folder,'IR_recon','IR_corrected_25.nii.gz' )).get_fdata()
+print(PAR.shape)
 
+mae_par,_,rmse_par,_, ssim_par = ff.compare(PAR[:,:,10:50], static[:,:,10:50],cutoff_low = -10, extreme = 1000)
+print('PAR results: ', mae_par, rmse_par, ssim_par)
 
 # Iterative recon:
-img_ds2 = np.copy(img_ds[:, 20:40,:,:])
-
 # define projector
 projector_ir = projector
 
 angles = ff.get_angles_zc(total_view_num, 360, sga)
-origin_img = img_ds2[0,...]
+origin_img = img[0,...]
 origin_img = origin_img[:,np.newaxis,...]
 
 curef = cp.array(origin_img, order='C')
@@ -101,14 +99,14 @@ projector_ir.set_backprojector(ct_fan.distance_driven_bp, angles=cuangles)  # no
 
 
 # doing recon
-PAR_corrected = (PAR.astype(np.float32) + 1024) / 1000 * 0.019
+PAR_corrected = np.rollaxis(PAR,2,0)
+PAR_corrected = (PAR_corrected.astype(np.float32) + 1024) / 1000 * 0.019
 PAR_corrected[PAR_corrected < 0] = 0
 PAR_corrected = PAR_corrected[:,np.newaxis,...]
 
-# sinogram_part = sinogram[20:40,...]
 
-niter = 900
-nos = 3
+niter = 400
+nos = 5
 nesterov = 0.5
 beta = 0
 zero_init = False
@@ -157,7 +155,7 @@ for i in range(0,niter):
         )
 
     # if (i + 1) % 10 == 0:
-    _, data_loss, prior_loss = ct_recon.sqs_gaussian_one_step_motion(
+    _, data_loss, _ = ct_recon.sqs_gaussian_one_step_motion(
         projector_ir,
         curecon,
         cuprj2,
@@ -177,17 +175,16 @@ for i in range(0,niter):
         return_loss=True
     )
 
-
-    Result.append([i, data_loss, prior_loss])
-    print(i, data_loss, prior_loss)
-
-    df = pd.DataFrame(Result, columns = ['step', 'data_loss', 'prior_loss'])
-
-    df.to_excel('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/loss_record_start_from_PAR.xlsx', index = False)
-
     recon_ir = curecon.get()[:,0,:,:]
     recon_ir = recon_ir / 0.019 * 1000 - 1024
 
-    nb.save(nb.Nifti1Image(np.rollaxis(recon_ir,0,3),affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_' + str(i)+'.nii.gz'))
-    # nb.save(nb.Nifti1Image(curecon.get(),affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_raw' + str(i)+'.nii.gz'))
-    # cp.save(os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR-recon','IR_corrected_raw' + str(i)+'.npy'), curecon)
+    recon_ir = np.rollaxis(recon_ir,0,3)
+    mae_ir,_,rmse_ir,_, ssim_ir = ff.compare(recon_ir[:,:,10:50], static[:,:,10:50],cutoff_low = -10, extreme = 1000)
+
+    nb.save(nb.Nifti1Image(recon_ir,affine), os.path.join('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/IR_recon','IR_corrected_' + str(i)+'.nii.gz'))
+
+    print('IR results: ', data_loss, mae_ir, rmse_ir, ssim_ir)
+
+    Result.append([i, data_loss, mae_ir, rmse_ir, ssim_ir])
+    df = pd.DataFrame(Result, columns = ['step', 'data_loss', 'mae_ir', 'rmse_ir', 'ssim_ir'])
+    df.to_excel('/mnt/mount_zc_NAS/motion_correction/data/test_sinograms/loss_record_start_from_PAR.xlsx', index = False)
